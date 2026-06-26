@@ -1,64 +1,46 @@
-name: CI - SOLINVORD Laravel Tests
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["**"]
+    branches: [ "main", "feature/*" ]
   pull_request:
-    branches: ["**"]
+    branches: [ "main" ]
 
 jobs:
   test:
-    name: Run Laravel Tests
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout del código
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      # 2. Configurar PHP 8.4 con extensiones necesarias
-      - name: Setup PHP 8.4
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.4"
-          extensions: mbstring, pdo, pdo_sqlite, sqlite3, xml, bcmath, ctype, json, tokenizer
-          coverage: none
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        tools: composer:v2
 
-      # 3. Cachear dependencias de Composer
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      # 4. Instalar dependencias de Composer
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      # 5. Copiar y configurar el archivo .env para pruebas
-      - name: Copy .env for testing
-        run: cp .env.example .env
+    - name: Generate key
+      run: php artisan key:generate
 
-      # 6. Generar la clave de la aplicación
-      - name: Generate application key
-        run: php artisan key:generate
+    - name: Create SQLite Database
+      run: |
+        mkdir -p database
+        touch database/database.sqlite
+      
+    - name: Run Migrations
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan migrate --force
 
-      # 7. Crear la base de datos SQLite en memoria (configurada en phpunit.xml)
-      - name: Create SQLite database file
-        run: touch database/database.sqlite
-
-      # 8. Ejecutar migraciones en la base de datos de pruebas
-      - name: Run migrations
-        run: php artisan migrate --force
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
-
-      # 9. Ejecutar todas las pruebas con php artisan test
-      - name: Run tests
-        run: php artisan test --testdox
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
+    - name: Execute Tests
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan test

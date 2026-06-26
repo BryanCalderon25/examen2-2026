@@ -8,6 +8,17 @@ use App\Http\Requests\UpdateMaterialRequest;
 
 class MaterialController extends Controller
 {
+    public function index()
+    {
+        // Obtener la lista de materiales con sus categorías asociadas (eager loading)
+        $materiales = Material::with('categoria')->get();
+
+        return response()->json([
+            'message' => 'Lista de materiales obtenida exitosamente',
+            'data'    => $materiales
+        ], 200);
+    }
+
     public function store(Request $request)
     {
         // Validación de los datos entrantes
