@@ -33,6 +33,12 @@ jobs:
         mkdir -p database
         touch database/database.sqlite
       
+    - name: Cleanup duplicate old migrations
+      run: |
+        rm -f database/migrations/*_141459_create_unidades_table.php
+        rm -f database/migrations/*_141735_create_material_unidad_table.php
+        rm -f database/migrations/*_150600_create_unidades_table.php
+
     - name: Run Migrations
       env:
         DB_CONNECTION: sqlite
