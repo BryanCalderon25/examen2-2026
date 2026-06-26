@@ -28,4 +28,12 @@ class Material extends Model
                     ->withPivot(['id', 'cantidad'])
                     ->withTimestamps();
     }
+
+    // Relación Muchos a Muchos: Un material puede estar en varias requisiciones
+    public function requisiciones()
+    {
+        return $this->belongsToMany(Requisicion::class, 'material_requisicion', 'material_id', 'requisicion_id')
+                    ->withPivot('cantidad_solicitada')
+                    ->withTimestamps();
+    }
 }
