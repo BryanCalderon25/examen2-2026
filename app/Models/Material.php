@@ -18,4 +18,14 @@ class Material extends Model
     {
         return $this->belongsTo(Categoria::class, 'categoria_id', 'idCategoria');
     }
+
+    // Integración requerida por el equipo (Bryan)
+    // Relación Muchos a Muchos: Un material puede estar en varias unidades
+    public function unidades()
+    {
+        return $this->belongsToMany(Unidad::class, 'material_unidad', 'material_id', 'unidad_id')
+                    ->using(MaterialUnidad::class)
+                    ->withPivot(['id', 'cantidad'])
+                    ->withTimestamps();
+    }
 }
